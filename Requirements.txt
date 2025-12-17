@@ -1,0 +1,6 @@
+streamlit>=1.34
+requests>=2.31
+numpy>=1.26
+pandas>=2.2
+streamlit-geolocation>=0.0.10
+Pillow>=10.0.0
