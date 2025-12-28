@@ -1,4 +1,4 @@
-import numpy as py 
+import numpy as np
 
 weights = {
     "pollution": 1.0,
@@ -109,7 +109,7 @@ def pollen_subindex(pollen_dict: dict | None) -> int:
 
 
 def weighted_dominance(sub_idx: dict) -> tuple[float, str, dict]:
-    weighted = {k: WEIGHTS[k] * sub_idx[k] for k in sub_idx.keys()}
+    weighted = {k: weights[k] * sub_idx[k] for k in sub_idx.keys()}
     dominant = max(weighted, key=weighted.get)
     base_score = float(weighted[dominant])
     return base_score, dominant, weighted
@@ -125,7 +125,7 @@ def compute_risk(vals: dict, n_med_factors: int) -> dict:
     }
 
     base_score, dominant, weighted = weighted_dominance(sub)
-    A = medical_amplifier(n_med_factors)
+    A = medical_applifier(n_med_factors)
     final_score = float(min(10.0, A * base_score))
     category = risk_band(final_score)
 
