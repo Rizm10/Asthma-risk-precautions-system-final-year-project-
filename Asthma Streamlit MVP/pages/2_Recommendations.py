@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 
-from src.risk_engine import compute_risk, build_recommendations, WEIGHTS
+from src.risk_engine import compute_risk, build_recommendations, weights as WEIGHTS
 
 st.title("Recommendations")
 st.caption("Informational only. Not diagnosis. Follow your personal asthma plan and clinical advice.")

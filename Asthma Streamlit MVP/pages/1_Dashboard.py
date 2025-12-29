@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 
-from src.risk_engine import compute_risk, WEIGHTS
+from src.risk_engine import compute_risk, weights
 
 st.title("Dashboard")
 st.caption("Summary of current environmental risk index. Informational only — not diagnosis.")
@@ -40,7 +40,7 @@ with left:
         {
             "factor": list(sub.keys()),
             "sub_index_0_10": [sub[k] for k in sub.keys()],
-            "weight": [WEIGHTS[k] for k in sub.keys()],
+            "weight": [weights[k] for k in sub.keys()],
             "weighted_score": [round(weighted[k], 2) for k in sub.keys()],
         }
     ).sort_values("weighted_score", ascending=False)
