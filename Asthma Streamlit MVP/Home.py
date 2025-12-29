@@ -8,3 +8,5 @@ from src.openweather_api import fetch_openmeteo_current_weather
 
 st.config.page_title ( page_title = "Asthma Risk Precautions System" , layoit = "centered" )
 st.title ("Asthma Environmental Risk Index")
+st.caption("Rule-based environmental decision support. Informational only — not diagnosis or clinical prediction.")
+st.sidebar.header("Controls")
