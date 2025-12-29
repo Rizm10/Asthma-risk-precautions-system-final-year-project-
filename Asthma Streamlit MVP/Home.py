@@ -1,3 +1,5 @@
+import os, sys
+sys.path.append(os.path.dirname(__file__))
 import streamlit as st
 st.set_page_config(
     page_title="Asthma Risk Precautions System",
