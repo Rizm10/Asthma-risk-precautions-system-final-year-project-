@@ -3,17 +3,25 @@ import pandas as pd
 
 from src.risk_engine import compute_risk, weights
 
-st.title("Dashboard")
-st.caption("Summary of current environmental risk index. Informational only — not diagnosis.")
+# Configure wide layout for better data visibility
+st.set_page_config(layout="wide")
 
+st.title("Asthma Environmental Risk Dashboard")
+st.caption("Real-time environmental risk index. Interpret results alongside your asthma management plan.")
+
+# Retrieve environmental data stored from Home page
 vals = st.session_state.get("vals")
 if not vals:
     st.warning("No data loaded. Go to **Home** and click **Fetch current data**.")
     st.stop()
 
+# Retrieve optional medical modifiers (used for amplification)
 n_med = st.session_state.get("n_med", 0)
+
+# Compute full risk output using core engine
 out = compute_risk(vals, n_med)
 
+# Extract key outputs for display
 category = out["category"]
 final_score = out["final_score"]
 dominant = out["dominant"]
@@ -21,37 +29,103 @@ A = out["amplifier"]
 sub = out["sub"]
 weighted = out["weighted"]
 
+# -----------------------
+# KPI SECTION
+# -----------------------
+# Displays high-level summary of the system output
 k1, k2, k3, k4 = st.columns(4)
+
 k1.metric("Risk Category", category)
-k2.metric("Final Score (0–10)", f"{final_score:.1f}")
-k3.metric("Dominant Factor", dominant)
-k4.metric("Medical Amplifier", f"x{A:.1f}")
+k2.metric("Score (0–10)", f"{final_score:.1f}")
+k3.metric("Dominant Trigger", dominant.capitalize())
+k4.metric("Amplifier", f"x{A:.1f}")
 
-st.write("**Risk level**")
-st.progress(min(final_score / 10.0, 1.0))
-st.caption("Score uses a weighted-dominant factor model. Final score = min(10, amplifier × base_score).")
+# -----------------------
+# RISK VISUALISATION
+# -----------------------
+# Converts numerical score into a visual severity indicator
+st.markdown("### Risk Level")
 
-left, right = st.columns([1.25, 1.0])
+progress_val = min(final_score / 10.0, 1.0)
 
+# Conditional colouring improves interpretability of severity
+if final_score < 3:
+    st.success("Low environmental risk")
+elif final_score < 6:
+    st.warning("Moderate environmental risk")
+else:
+    st.error("High environmental risk")
+
+st.progress(progress_val)
+
+# -----------------------
+# MAIN LAYOUT SPLIT
+# -----------------------
+left, right = st.columns([1.3, 1])
+
+# -----------------------
+# FACTOR BREAKDOWN (LEFT)
+# -----------------------
 with left:
     st.subheader("Factor Breakdown")
 
+    # Create structured table linking sub-indices to weighted contribution
     df = pd.DataFrame(
         {
-            "factor": list(sub.keys()),
-            "sub_index_0_10": [sub[k] for k in sub.keys()],
-            "weight": [weights[k] for k in sub.keys()],
-            "weighted_score": [round(weighted[k], 2) for k in sub.keys()],
+            "Factor": list(sub.keys()),
+            "Sub Index (0–10)": [sub[k] for k in sub.keys()],
+            "Weight": [weights[k] for k in sub.keys()],
+            "Weighted Score": [round(weighted[k], 2) for k in sub.keys()],
         }
-    ).sort_values("weighted_score", ascending=False)
+    ).sort_values("Weighted Score", ascending=False)
 
-    st.dataframe(df, use_container_width=True)
-    st.bar_chart(df.set_index("factor")[["weighted_score"]])
+    # Highlight dominant factor to emphasise interpretability
+    def highlight_dom(val):
+        if val == dominant:
+            return "background-color: #ffcccc"
+        return ""
 
+    st.dataframe(
+        df.style.applymap(highlight_dom, subset=["Factor"]),
+        use_container_width=True
+    )
+
+    # Visual comparison of weighted contributions
+    st.bar_chart(df.set_index("Factor")[["Weighted Score"]])
+
+# -----------------------
+# RAW DATA + INTERPRETATION (RIGHT)
+# -----------------------
 with right:
-    st.subheader("Notes")
-    st.write(f"- Timestamp: **{vals.get('time')}**")
-    st.write("- Informational only. Not diagnosis.")
-    st.write("- Environmental risk indicator (not a clinical outcome prediction).")
+    st.subheader("Current Conditions")
+
+    # Displays raw environmental inputs for transparency
+    st.metric("Temperature (°C)", f"{vals.get('temp_c'):.1f}" if vals.get("temp_c") else "N/A")
+    st.metric("Humidity (%)", f"{vals.get('rh'):.0f}" if vals.get("rh") else "N/A")
+    st.metric("Wind (m/s)", f"{vals.get('wind'):.1f}" if vals.get("wind") else "N/A")
+    st.metric("EU AQI", vals.get("eu_aqi") if vals.get("eu_aqi") else "N/A")
+
+    st.divider()
+
+    st.subheader("Interpretation")
+
+    # Explicit mapping between model logic and output
+    st.write(f"- **Primary driver:** {dominant.capitalize()}")
+    st.write(f"- **Base score:** {out['base_score']:.2f}")
+    st.write(f"- **Amplified score:** {final_score:.2f}")
+
+    # Makes aggregation logic visible to user
+    st.caption("Score = dominant(weight × sub-index) × amplifier")
+
+# -----------------------
+# FOOTER
+# -----------------------
+st.divider()
+
+# Reinforces non-diagnostic framing as a deliberate design decision
+st.caption(
+    "This system provides an environmental risk signal only. "
+    "It does not diagnose asthma or predict medical events."
+)
 
 st.info("Next: open **Recommendations** in the sidebar.")
